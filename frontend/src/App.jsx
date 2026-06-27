@@ -8,6 +8,7 @@ import TicketDetails from "./pages/TicketDetails";
 import AdminDashboard from "./pages/AdminDashboard";
 import AgentDashboard from "./pages/AgentDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
+import StatCard from "../components/StatCard";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/agent" element={<AgentDashboard />} />
         <Route path="/customer" element={<CustomerDashboard />} />
+        
       </Routes>
     </BrowserRouter>
   );

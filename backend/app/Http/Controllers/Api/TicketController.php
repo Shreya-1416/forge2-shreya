@@ -67,17 +67,21 @@ class TicketController extends Controller
 }
 
     public function update(Request $request, Ticket $ticket)
-    {
-        $ticket->update($request->only([
-            'subject',
-            'description',
-            'priority',
-            'status',
-            'agent_id',
-        ]));
+{
+    $request->validate([
+        'agent_id' => 'nullable|exists:users,id',
+        'status' => 'nullable|in:open,pending,resolved,closed',
+        'priority' => 'nullable|in:low,medium,high',
+    ]);
 
-        return response()->json($ticket);
-    }
+    $ticket->update([
+        'agent_id' => $request->agent_id ?? $ticket->agent_id,
+        'status' => $request->status ?? $ticket->status,
+        'priority' => $request->priority ?? $ticket->priority,
+    ]);
+
+    return response()->json($ticket);
+}
 
     public function destroy(Ticket $ticket)
     {
@@ -109,5 +113,12 @@ class TicketController extends Controller
         'resolved' => (clone $query)->where('status', 'resolved')->count(),
         'closed' => (clone $query)->where('status', 'closed')->count(),
     ]);
+}
+
+public function agents()
+{
+    return \App\Models\User::where('role', 'agent')
+        ->select('id', 'name')
+        ->get();
 }
 }
