@@ -9,12 +9,25 @@ use Illuminate\Http\Request;
 class TicketController extends Controller
 {
     public function index(Request $request)
-    {
-        return Ticket::where('organization_id', $request->user()->organization_id)
-            ->with(['customer', 'agent'])
+{
+    $user = $request->user();
+
+    if ($user->role === 'admin') {
+        return Ticket::with(['customer','agent'])->latest()->get();
+    }
+
+    if ($user->role === 'agent') {
+        return Ticket::where('agent_id', $user->id)
+            ->with(['customer','agent'])
             ->latest()
             ->get();
     }
+
+    return Ticket::where('customer_id', $user->id)
+        ->with(['customer','agent'])
+        ->latest()
+        ->get();
+}
 
     public function store(Request $request)
     {
@@ -74,4 +87,27 @@ class TicketController extends Controller
             'message' => 'Ticket deleted successfully'
         ]);
     }
+
+    public function stats(Request $request)
+{
+    $user = $request->user();
+
+    $query = Ticket::query();
+
+    if ($user->role === 'agent') {
+        $query->where('agent_id', $user->id);
+    }
+
+    if ($user->role === 'customer') {
+        $query->where('customer_id', $user->id);
+    }
+
+    return response()->json([
+        'total' => (clone $query)->count(),
+        'open' => (clone $query)->where('status', 'open')->count(),
+        'pending' => (clone $query)->where('status', 'pending')->count(),
+        'resolved' => (clone $query)->where('status', 'resolved')->count(),
+        'closed' => (clone $query)->where('status', 'closed')->count(),
+    ]);
+}
 }

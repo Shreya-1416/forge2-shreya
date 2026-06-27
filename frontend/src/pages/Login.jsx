@@ -22,8 +22,15 @@ localStorage.setItem("token", res.data.token);
 console.log(localStorage.getItem("token"));
 
       localStorage.setItem("token", res.data.token);
+localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      navigate("/dashboard");
+if (res.data.user.role === "admin") {
+    navigate("/admin");
+} else if (res.data.user.role === "agent") {
+    navigate("/agent");
+} else {
+    navigate("/customer");
+}
     } catch {
       alert("Invalid Credentials");
     }
