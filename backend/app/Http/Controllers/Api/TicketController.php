@@ -8,40 +8,62 @@ use Illuminate\Http\Request;
 
 class TicketController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Ticket::with(['customer','agent'])->latest()->get();
+        return Ticket::where('organization_id', $request->user()->organization_id)
+            ->with(['customer', 'agent'])
+            ->latest()
+            ->get();
     }
 
     public function store(Request $request)
-{
-    $data = $request->validate([
-        'subject' => 'required|string|max:255',
-        'description' => 'required|string',
-        'priority' => 'required|in:low,medium,high',
-    ]);
+    {
+        $user = $request->user();
 
-    $user = \App\Models\User::where('email', 'admin@acme.test')->first();
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
 
-$data['organization_id'] = $user->organization_id;
-$data['customer_id'] = $user->id;
-    $data['status'] = 'open';
+        $data = $request->validate([
+            'subject' => 'required|string|max:255',
+            'description' => 'required|string',
+            'priority' => 'required|in:low,medium,high',
+        ]);
 
-    $ticket = Ticket::create($data);
+        $ticket = Ticket::create([
+            'organization_id' => $user->organization_id,
+            'customer_id' => $user->id,
+            'subject' => $data['subject'],
+            'description' => $data['description'],
+            'priority' => $data['priority'],
+            'status' => 'open',
+        ]);
 
-    return response()->json($ticket, 201);
-}
+        return response()->json($ticket, 201);
+    }
 
     public function show(Ticket $ticket)
-    {
-        return $ticket->load(['customer','agent','messages']);
-    }
+{
+    return $ticket->load([
+        'customer',
+        'agent',
+        'messages.user',
+    ]);
+}
 
     public function update(Request $request, Ticket $ticket)
     {
-        $ticket->update($request->all());
+        $ticket->update($request->only([
+            'subject',
+            'description',
+            'priority',
+            'status',
+            'agent_id',
+        ]));
 
-        return $ticket;
+        return response()->json($ticket);
     }
 
     public function destroy(Ticket $ticket)
@@ -49,7 +71,7 @@ $data['customer_id'] = $user->id;
         $ticket->delete();
 
         return response()->json([
-            'message'=>'Deleted'
+            'message' => 'Ticket deleted successfully'
         ]);
     }
 }

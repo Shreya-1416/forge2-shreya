@@ -11,15 +11,16 @@ class TicketMessageController extends Controller
 {
     public function store(Request $request, Ticket $ticket)
     {
-        $data = $request->validate([
+        $request->validate([
             'message' => 'required|string',
         ]);
 
-        $data['ticket_id'] = $ticket->id;
-        $data['user_id'] = $request->user()->id;
-        $data['is_internal_note'] = false;
-
-        $message = TicketMessage::create($data);
+        $message = TicketMessage::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'message' => $request->message,
+            'is_internal_note' => false,
+        ]);
 
         return response()->json($message, 201);
     }

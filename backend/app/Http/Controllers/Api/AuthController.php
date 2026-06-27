@@ -11,32 +11,41 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->validate([
-            'email' => ['required','email'],
-            'password' => ['required']
+            'email' => ['required', 'email'],
+            'password' => ['required'],
         ]);
 
         if (!Auth::attempt($credentials)) {
             return response()->json([
-                'message' => 'Invalid credentials'
+                'message' => 'Invalid credentials',
             ], 401);
         }
 
         $user = Auth::user();
 
-        $token = $user->createToken('pulsedesk')->plainTextToken;
+        // Remove old tokens (optional)
+        $user->tokens()->delete();
+
+        // Create new token
+        $token = $user->createToken('PulseDesk')->plainTextToken;
 
         return response()->json([
+            'success' => true,
             'token' => $token,
-            'user' => $user
-        ]);
+            'token_type' => 'Bearer',
+            'user' => $user,
+        ], 200);
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        if ($request->user()) {
+            $request->user()->currentAccessToken()?->delete();
+        }
 
         return response()->json([
-            'message' => 'Logged out successfully'
+            'success' => true,
+            'message' => 'Logged out successfully',
         ]);
     }
 
